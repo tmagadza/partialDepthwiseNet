@@ -1,27 +1,45 @@
-# 3D U-Net Convolution Neural Network
-## [Brain Tumor Segmentation (BraTS) Tutorial](examples/brats2020)
-[![Tumor Segmentation Example](legacy/doc/tumor_segmentation_illusatration.gif)](examples/brats2020)
-## [Automatic Cranial Implant Design (AutoImpant)](examples/autoimplant2020)
-[![ Segmentation Example](doc/AutoImplant-Viz.png)](examples/autoimplant2020)
-## [Anatomical Barriers to Cancer Spread (ABCS)](examples/abcs2020)
-## Background
-We designed 3DUnetCNN to make it easy to apply and control the training and application of various deep learning models to medical imaging data.
-The links above give examples/tutorials for how to use this project with data from various MICCAI challenges.
+# Brain Tumor Segmentation using Partial Depthwise Separable Convolutions
 
-## Getting started
-Install [PyTorch](https://pytorch.org/get-started/locally/) and 
-[nilearn](https://nilearn.github.io/introduction.html#installing-nilearn).
+## Setup
 
-## [Pretrained Models](https://zenodo.org/record/4289225)
+1. Open terminal and setup partialDepthwiseNet repository:
+```
+git clone https://github.com/tmagadza/partialDepthwiseNet
+cd partialDepthwiseNet
+export PYTHONPATH=${PWD}:${PYTHONPATH}
+``` 
+2. Download the [BraTS2020 data](https://www.med.upenn.edu/cbica/brats2020/data.html) 
+to the ```partialDepthwiseNet``` example directory. 
+The training data folder should be named ```MICCAI_BraTS2020_TrainingData```
+and the validation data folder should be named ```MICCAI_BraTS2020_ValidationData```.
+3. Train the model:
 
-## Got Questions?
-See [FAQ](doc/FAQ.md), raise an issue on GitHub, or email me at david.ellis@unmc.edu.
+```python unet3d/scripts/train.py --config_filename ./brats_config.json --model_filename ./brats_unet3d_baseline.h5 --training_log_filename brats_baseline_training_log.csv --nthreads <nthreads> --ngpus <ngpus> --fit_gpu_mem <gpu_mem>```
 
+```<nthreads>```,
+```<ngpus>```, and
+```<gpu_mem>```
+should be set to the number of threads, number of GPUs, and the amount of GPU memory in GB on a single gpu that will be used for training.
 
-## Citation
-Ellis D.G., Aizenberg M.R. (2021) Trialing U-Net Training Modifications for Segmenting Gliomas Using Open Source Deep Learning Framework. In: Crimi A., Bakas S. (eds) Brainlesion: Glioma, Multiple Sclerosis, Stroke and Traumatic Brain Injuries. BrainLes 2020. Lecture Notes in Computer Science, vol 12659. Springer, Cham. https://doi.org/10.1007/978-3-030-72087-2_4
+4. Predict the tumor label maps for the validation data:
 
-### Additional Citations
-Ellis D.G., Aizenberg M.R. (2020) Deep Learning Using Augmentation via Registration: 1st Place Solution to the AutoImplant 2020 Challenge. In: Li J., Egger J. (eds) Towards the Automatization of Cranial Implant Design in Cranioplasty. AutoImplant 2020. Lecture Notes in Computer Science, vol 12439. Springer, Cham. https://doi.org/10.1007/978-3-030-64327-0_6
+```python unet3d/scripts/predict.py --segment --output_directory ./predictions/validation/baseline --config_filename ./brats_config_auto.json --model_filename ./brats_unet3d_baseline.h5 --replace Training Validation --group validation --output_template "BraTS20_Validation_{subject}.nii.gz" --nthreads <nthreads> --ngpus <ngpus>```
 
-Ellis, D.G. and M.R. Aizenberg, Structural brain imaging predicts individual-level task activation maps using deep learning. bioRxiv, 2020: https://doi.org/10.1101/2020.10.05.306951
+```<nthreads>``` and
+```<ngpus>```
+should be set to the number of threads and gpus that you are using.
+The predicted tumor label map volumes will be in the folder: ```./predictions/validation/baseline```
+
+These label maps are ready to be submitted to the [CBICA portal](https://ipp.cbica.upenn.edu/) 
+that the BraTS challenge uses to score and rank submissions.
+
+#### Notes on configuration
+The ```train.py``` script will automatically set the input image size and batch size based on the amount of GPU memory and number of GPUs.
+If you do not want these settings automatically set, you can adjust them yourself by making changes to the config file instead of using the
+```--fit_gpu_mem``` flag. 
+Rather than specifying the number of GPUs and threads on the command line, you can also make a configuration file for the machine you are using
+and pass this using the ```--machine_config_filename``` flag. 
+
+#### Citation
+The code is based on open source deep learning framework by D. G. Ellis and M. R. Aizenberg [3DUnetCNN](https://github.com/ellisdg/3DUnetCNN) 
+
